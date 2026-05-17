@@ -10,6 +10,9 @@ pipeline {
         ACCOUNT_ID = '235494794622'
         ECR_REPO = 'attendance-app'
         IMAGE_TAG = 'latest'
+
+        AWS_ACCESS_KEY_ID = 'AKIATNVEVMV7EU5AB34V'
+        AWS_SECRET_ACCESS_KEY = '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'
     }
 
     stages {
@@ -26,22 +29,21 @@ pipeline {
             }
         }
 
+        stage('Configure AWS Credentials') {
+            steps {
+                bat '''
+                aws configure set aws_access_key_id %AWS_ACCESS_KEY_ID%
+                aws configure set aws_secret_access_key %AWS_SECRET_ACCESS_KEY%
+                aws configure set default.region %AWS_REGION%
+                '''
+            }
+        }
+
         stage('Login to AWS ECR') {
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'aws-creds',
-                    usernameVariable: 'AWS_ACCESS_KEY_ID',
-                    passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                )]) {
-
-                    bat '''
-                    aws configure set aws_access_key_id %AWS_ACCESS_KEY_ID%
-                    aws configure set aws_secret_access_key %AWS_SECRET_ACCESS_KEY%
-                    aws configure set default.region %AWS_REGION%
-
-                    aws ecr get-login-password --region %AWS_REGION% | docker login --username AWS --password-stdin %ACCOUNT_ID%.dkr.ecr.%AWS_REGION%.amazonaws.com
-                    '''
-                }
+                bat '''
+                aws ecr get-login-password --region %AWS_REGION% | docker login --username AWS --password-stdin %ACCOUNT_ID%.dkr.ecr.%AWS_REGION%.amazonaws.com
+                '''
             }
         }
 
